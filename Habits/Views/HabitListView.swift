@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct HabitListView: View {
+    
+    @State private var showingAddHabit = false
+    
     var body: some View {
         NavigationStack {
             Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
@@ -15,11 +18,14 @@ struct HabitListView: View {
                 ToolbarSpacer(placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button {
-                        print("Add Habit Pressed")
+                        showingAddHabit = true
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
+            }
+            .sheet(isPresented: $showingAddHabit) {
+                AddHabitView()
             }
         }
     }
