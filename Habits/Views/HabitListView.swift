@@ -9,7 +9,19 @@ import SwiftUI
 
 struct HabitListView: View {
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+            .toolbar {
+                ToolbarSpacer(placement: .bottomBar)
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        print("Add Habit Pressed")
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+        }
     }
 }
 
