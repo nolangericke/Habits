@@ -24,6 +24,7 @@ struct PersistenceController {
         }
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
+                print("[Persistence] Failed to load persistent stores: \(error), info: \(error.userInfo)")
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
         })

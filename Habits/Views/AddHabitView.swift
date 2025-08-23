@@ -6,13 +6,34 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct AddHabitView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var viewModel: HabitViewModel
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Area.name, ascending: true)],
+        animation: .default
+    )
+    private var areas: FetchedResults<Area>
+    
+    @State private var habitName: String = ""
+    @State private var selectedArea: Area?
+    @State private var showAlert = false
     
     var body: some View {
-        NavigationStack{
-            Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            Form {
+                TextField("Habit Name", text: $habitName)
+                
+                Picker("Area", selection: $selectedArea) {
+                    ForEach(areas, id: \.self) { area in
+                        Text(area.name ?? "Unnamed Area").tag(area as Area?)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+            }
             .navigationTitle("New Habit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -25,16 +46,16 @@ struct AddHabitView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        print("Checkmark pressed")
+                        if let area = selectedArea {
+                            viewModel.addHabit(name: habitName, area: area)
+                            dismiss()
+                        }
                     } label: {
                         Image(systemName: "checkmark")
                     }
+                    .disabled(areas.isEmpty || habitName.isEmpty)
                 }
             }
         }
     }
-}
-
-#Preview {
-    AddHabitView()
 }

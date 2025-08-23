@@ -13,23 +13,24 @@ struct HabitRowView: View {
     
     var body: some View {
         HStack {
+            if let area = habit.area {
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: area.iconName)
+                        .foregroundStyle(.secondary)
+                        .imageScale(.medium)
+                        .fontWeight(.bold)
+                }
+            }
             VStack(alignment: .leading) {
                 Text(habit.name ?? "Unnamed Habit")
-                    .font(.headline)
-                // Example: show other properties if needed
-                // Text("Created: \(habit.createdAt, formatter: dateFormatter)")
+                    .fontWeight(.medium)
+                Text("Streak")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            Spacer()
-            // Add icons, streaks, or other elements here
         }
-        .padding(.vertical, 8)
     }
-}
-
-#Preview {
-    // Provide an in-memory managed object context for preview
-    let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
-    let habit = Habit(context: context)
-    habit.name = "Read a book"
-    return HabitRowView(habit: habit)
 }

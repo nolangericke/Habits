@@ -21,6 +21,7 @@ class HabitViewModel: ObservableObject {
         fetchHabits()
         fetchCompletions()
         fetchAreas()
+        seedDefaultAreasIfNeeded()
     }
     
     // MARK: - Habit CRUD
@@ -101,6 +102,23 @@ class HabitViewModel: ObservableObject {
         fetchAreas()
     }
     
+    private func seedDefaultAreasIfNeeded() {
+        let request: NSFetchRequest<Area> = Area.fetchRequest()
+        do {
+            let existingAreas = try context.fetch(request)
+            if existingAreas.isEmpty {
+                for defaultInfo in DefaultArea.all {
+                    let area = Area(context: context)
+                    area.id = defaultInfo.id
+                    area.name = defaultInfo.name
+                }
+                save()
+                fetchAreas()
+            }
+        } catch {
+            print("Error seeding default areas: \(error)")
+        }
+    }
     
     // MARK: - Save Helper
     private func save() {
@@ -112,4 +130,3 @@ class HabitViewModel: ObservableObject {
         }
     }
 }
-

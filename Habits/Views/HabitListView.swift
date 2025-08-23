@@ -6,14 +6,33 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct HabitListView: View {
     
-    @State private var showingAddHabit = false
+    @Environment(\.managedObjectContext) private var context
+    @EnvironmentObject var viewModel: HabitViewModel
+    
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
+        animation: .default)
+    private var habits: FetchedResults<Habit>
+    
+    private func deleteHabit(at offsets: IndexSet) {
+        for index in offsets {
+            let habit = habits[index]
+            viewModel.deleteHabit(habit)
+        }
+    }
     
     var body: some View {
         NavigationStack {
-            Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+            List {
+                ForEach(habits, id: \.self) { habit in
+                    HabitRowView(habit: habit)
+                }
+                .onDelete(perform: deleteHabit)
+            }
             .toolbar {
                 ToolbarSpacer(placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
@@ -29,8 +48,6 @@ struct HabitListView: View {
             }
         }
     }
-}
-
-#Preview {
-    HabitListView()
+    
+    @State private var showingAddHabit = false
 }
