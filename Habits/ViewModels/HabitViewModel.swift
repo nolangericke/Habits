@@ -120,6 +120,29 @@ class HabitViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Habit Completion Functions
+    
+    func isHabitCompletedToday(_ habit: Habit) -> Bool {
+        guard let habitId = habit.id else { return false }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return completions.contains(where: { completion in
+            completion.habit?.id == habitId &&
+            completion.date != nil &&
+            calendar.isDate(completion.date!, inSameDayAs: today)
+        })
+    }
+    
+    func toggleHabitCompletion(_ habit: Habit) {
+        if let completion = completions.first(where: { comp in
+            comp.habit?.id == habit.id && comp.date != nil && Calendar.current.isDateInToday(comp.date!)
+        }) {
+            deleteCompletion(completion)
+        } else {
+            addCompletion(for: habit)
+        }
+    }
+    
     // MARK: - Save Helper
     private func save() {
         do {

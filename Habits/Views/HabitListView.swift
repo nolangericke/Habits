@@ -18,6 +18,9 @@ struct HabitListView: View {
         animation: .default)
     private var habits: FetchedResults<Habit>
     
+    @State private var showingAddHabit = false
+    @State private var selectedHabit: Habit?
+    
     private func deleteHabit(at offsets: IndexSet) {
         for index in offsets {
             let habit = habits[index]
@@ -29,7 +32,10 @@ struct HabitListView: View {
         NavigationStack {
             List {
                 ForEach(habits, id: \.self) { habit in
-                    HabitRowView(habit: habit)
+                    HabitRowView(habit: habit, onTap: {
+                        selectedHabit = habit
+                    })
+                    .environmentObject(viewModel)
                 }
                 .onDelete(perform: deleteHabit)
             }
@@ -46,8 +52,10 @@ struct HabitListView: View {
             .sheet(isPresented: $showingAddHabit) {
                 AddHabitView()
             }
+            .navigationDestination(item: $selectedHabit) { habit in
+                HabitDetailView(habit: habit)
+                    .environmentObject(viewModel)
+            }
         }
     }
-    
-    @State private var showingAddHabit = false
 }
