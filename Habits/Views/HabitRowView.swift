@@ -16,6 +16,15 @@ struct HabitRowView: View {
 
     private let haptic = UINotificationFeedbackGenerator()
     private let softHaptic = UIImpactFeedbackGenerator(style: .soft)
+    
+    private var streakText: String {
+        let streak = HabitStreakCalculator.streak(for: habit, completions: viewModel.completions)
+        return streak == 1 ? "1 day" : "\(streak) days"
+    }
+    
+    private var progress: CGFloat {
+        viewModel.isHabitCompletedToday(habit) ? 1.0 : 0.0
+    }
 
     init(habit: Habit, onTap: (() -> Void)? = nil) {
         self.habit = habit
@@ -29,8 +38,14 @@ struct HabitRowView: View {
                     if let area = habit.area {
                         ZStack {
                             Circle()
-                                .fill(Color(.systemGray5))
+                                .fill(Color(.tertiarySystemFill))
                                 .frame(width: 44, height: 44)
+                            Circle()
+                                .trim(from: 0, to: progress)
+                                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                                .frame(width: 44, height: 44)
+                                .animation(.easeOut(duration: 0.4), value: progress)
                             Image(systemName: area.iconName)
                                 .foregroundStyle(.secondary)
                                 .imageScale(.medium)
@@ -40,9 +55,9 @@ struct HabitRowView: View {
                     VStack(alignment: .leading) {
                         Text(habit.name ?? "Unnamed Habit")
                             .fontWeight(.medium)
-                        Text("Streak")
+                        Text(streakText)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(streakText != "0 days" ? .accent : .secondary)
                     }
                     Spacer()
                 }
@@ -80,3 +95,4 @@ struct HabitRowView: View {
         }
     }
 }
+
