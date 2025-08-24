@@ -19,6 +19,7 @@ struct HabitListView: View {
     private var habits: FetchedResults<Habit>
     
     @State private var showingAddHabit = false
+    @State private var showingAddRoutine = false
     @State private var selectedHabit: Habit?
     
     private func deleteHabit(at offsets: IndexSet) {
@@ -40,6 +41,13 @@ struct HabitListView: View {
                 .onDelete(perform: deleteHabit)
             }
             .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        showingAddRoutine = true
+                    } label: {
+                        Image(systemName: "ellipsis")
+                    }
+                }
                 ToolbarSpacer(placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button {
@@ -51,6 +59,9 @@ struct HabitListView: View {
             }
             .sheet(isPresented: $showingAddHabit) {
                 AddHabitView()
+            }
+            .sheet(isPresented: $showingAddRoutine) {
+                AddRoutineView()
             }
             .navigationDestination(item: $selectedHabit) { habit in
                 HabitDetailView(habit: habit)

@@ -14,6 +14,7 @@ class HabitViewModel: ObservableObject {
     @Published var habits: [Habit] = []
     @Published var completions: [HabitCompletion] = []
     @Published var areas: [Area] = []
+    @Published var routines: [Routine] = []
     private let context: NSManagedObjectContext
     
     init(context: NSManagedObjectContext) {
@@ -21,6 +22,7 @@ class HabitViewModel: ObservableObject {
         fetchHabits()
         fetchCompletions()
         fetchAreas()
+        fetchRoutines()
         seedDefaultAreasIfNeeded()
     }
     
@@ -33,12 +35,13 @@ class HabitViewModel: ObservableObject {
             print("Error fetching habits: \(error)")
         }
     }
-    func addHabit(name: String, area: Area) {
+    func addHabit(name: String, area: Area, routine: Routine?) {
         let habit = Habit(context: context)
         habit.name = name
         habit.id = UUID()
         habit.createdAt = Date()
         habit.area = area
+        habit.routine = routine // routine is optional
         save()
         fetchHabits()
     }
@@ -118,6 +121,37 @@ class HabitViewModel: ObservableObject {
         } catch {
             print("Error seeding default areas: \(error)")
         }
+    }
+    
+    // MARK: - Routine CRUD
+    
+    func fetchRoutines() {
+        let request: NSFetchRequest<Routine> = Routine.fetchRequest()
+        do {
+            routines = try context.fetch(request)
+        } catch {
+            print("Error fetching routines: \(error)")
+        }
+    }
+
+    func addRoutine(name: String) {
+        let routine = Routine(context: context)
+        routine.name = name
+        routine.id = UUID()
+        save()
+        fetchRoutines()
+    }
+
+    func updateRoutine(_ routine: Routine, name: String) {
+        routine.name = name
+        save()
+        fetchRoutines()
+    }
+
+    func deleteRoutine(_ routine: Routine) {
+        context.delete(routine)
+        save()
+        fetchRoutines()
     }
     
     // MARK: - Habit Completion Functions

@@ -13,27 +13,14 @@ struct HabitDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text(habit.name ?? "Unnamed Habit")
-                .font(.title)
-                .fontWeight(.bold)
-                .padding(.bottom)
-            Text("Completions")
-                .font(.headline)
-                .padding(.bottom, 2)
-            if completionsForHabit.isEmpty {
-                Text("No completions yet.")
-                    .foregroundStyle(.secondary)
-                    .padding(.top)
-            } else {
-                List(completionsForHabit, id: \.self) { completion in
-                    if let date = completion.date {
-                        Text(date.formatted(date: .abbreviated, time: .omitted))
-                    }
+            List(completionsForHabit, id: \.self) { completion in
+                if let date = completion.date {
+                    Text(date.formatted(date: .abbreviated, time: .complete))
                 }
             }
-            Spacer()
         }
-        .padding()
+        .navigationTitle(habit.name ?? "Unnamed Habit")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var completionsForHabit: [HabitCompletion] {
