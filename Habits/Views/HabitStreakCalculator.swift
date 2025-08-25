@@ -62,4 +62,46 @@ struct HabitStreakCalculator {
         
         return streak
     }
+    
+    /// Calculates the consecutive day streak for which ALL habits were completed.
+    /// - Parameters:
+    ///   - habits: The list of habits to consider.
+    ///   - completions: All completions.
+    ///   - calendar: Calendar to use, defaults to current.
+    ///   - now: Current date, defaults to now. Useful for testing.
+    /// - Returns: The number of consecutive days where all habits were completed.
+    static func dailyStreakForAllHabits(habits: [Habit], completions: [HabitCompletion], calendar: Calendar = .current, now: Date = Date()) -> Int {
+        guard !habits.isEmpty else { return 0 }
+        let habitIds = habits.compactMap { $0.id }
+        let completionDict = Dictionary(grouping: completions, by: {
+            calendar.startOfDay(for: $0.date ?? Date.distantPast)
+        })
+        var streak = 0
+        var day = calendar.startOfDay(for: now)
+        var graceDayChecked = false
+        while true {
+            // For each habit, did it get a completion for this day?
+            let dailyCompletions = completionDict[day] ?? []
+            let completedHabitIds = Set(dailyCompletions.compactMap { $0.habit?.id })
+            // If all habit IDs are in completedHabitIds, streak continues
+            if Set(habitIds).isSubset(of: completedHabitIds) {
+                streak += 1
+            } else if !graceDayChecked {
+                // Allow 'grace' for today: If today was missed but yesterday met the condition, allow the streak to continue (if savable)
+                graceDayChecked = true
+                if let prevDay = calendar.date(byAdding: .day, value: -1, to: day) {
+                    day = prevDay
+                    continue
+                }
+            } else {
+                break
+            }
+            if let prevDay = calendar.date(byAdding: .day, value: -1, to: day) {
+                day = prevDay
+            } else {
+                break
+            }
+        }
+        return streak
+    }
 }

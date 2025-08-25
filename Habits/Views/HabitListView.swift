@@ -68,8 +68,11 @@ struct HabitListView: View {
         }
         try? context.save()
     }
-    
+
     var body: some View {
+        // Compute allCompletedStreak here since we cannot do it at property level
+        let allCompletedStreak: Int = HabitStreakCalculator.dailyStreakForAllHabits(habits: habits.map { $0 }, completions: viewModel.completions)
+        
         NavigationStack {
             List {
                 ForEach(habitsByRoutine.sorted(by: { (lhs, rhs) in
@@ -104,8 +107,9 @@ struct HabitListView: View {
                                 .accessibilityLabel("Today's habit progress")
                                 .accessibilityValue("\(Int(todaysProgress * 100)) percent complete")
                                 .padding(.vertical, 2)
-                            Text("0 Days")
+                            Text("\(allCompletedStreak) Days")
                                 .fontWeight(.semibold)
+                                .foregroundStyle(allCompletedStreak > 0 ? .accent : .secondary)
                         }
                     }
                 }
