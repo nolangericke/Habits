@@ -27,6 +27,10 @@ struct HabitRowView: View {
     private var progress: CGFloat {
         viewModel.isHabitCompletedToday(habit) ? 1.0 : 0.0
     }
+    
+    private var yesterday: Date {
+        Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+    }
 
     init(habit: Habit, onTap: (() -> Void)? = nil, onDelete: (() -> Void)? = nil) {
         self.habit = habit
@@ -109,6 +113,15 @@ struct HabitRowView: View {
                 Label("Edit", systemImage: "pencil")
             }
             .tint(.orange)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                viewModel.addCompletion(for: habit, date: yesterday)
+                softHaptic.impactOccurred()
+            } label: {
+                Label("Add Yesterday", systemImage: "calendar.badge.plus")
+            }
+            .tint(.blue)
         }
         .sheet(isPresented: $showingEditSheet) {
             UpdateHabitView(habit: habit).environmentObject(viewModel)
