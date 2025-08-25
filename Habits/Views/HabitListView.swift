@@ -8,10 +8,30 @@
 import SwiftUI
 import CoreData
 
+struct CircularProgressView: View {
+    let progress: Double
+    let size: CGFloat
+    let lineWidth: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color(.tertiarySystemFill), style: StrokeStyle(lineWidth: lineWidth))
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(.easeOut(duration: 0.4), value: progress)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
 struct HabitListView: View {
     
     @Environment(\.managedObjectContext) private var context
     @EnvironmentObject var viewModel: HabitViewModel
+    @Environment(\.editMode) private var editMode
     
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Habit.orderIndex, ascending: true), NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
@@ -26,6 +46,12 @@ struct HabitListView: View {
     @State private var showingAddRoutine = false
     @State private var showingReorderRoutines = false
     @State private var selectedHabit: Habit?
+    
+    private var todaysProgress: Double {
+        let total = habits.count
+        let completed = habits.filter { viewModel.isHabitCompletedToday($0) }.count
+        return total > 0 ? Double(completed) / Double(total) : 0.0
+    }
     
     private func deleteHabit(at offsets: IndexSet) {
         for index in offsets {
@@ -70,20 +96,36 @@ struct HabitListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    EditButton()
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        showingAddRoutine = true
-                    } label: {
-                        Image(systemName: "ellipsis")
+                    Button(action: {
+                        // Optionally show a stats modal or toast here
+                    }) {
+                        HStack {
+                            CircularProgressView(progress: todaysProgress, size: 28, lineWidth: 4)
+                                .accessibilityLabel("Today's habit progress")
+                                .accessibilityValue("\(Int(todaysProgress * 100)) percent complete")
+                                .padding(.vertical, 2)
+                            Text("0 Days")
+                                .fontWeight(.semibold)
+                        }
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingReorderRoutines = true
+                    Menu {
+                        Button("Edit") {
+                            if editMode?.wrappedValue == .active {
+                                editMode?.wrappedValue = .inactive
+                            } else {
+                                editMode?.wrappedValue = .active
+                            }
+                        }
+                        Button("Reorder Routines") {
+                            showingReorderRoutines = true
+                        }
+                        Button("Add Routine") {
+                            showingAddRoutine = true
+                        }
                     } label: {
-                        Image(systemName: "arrow.up.arrow.down")
+                        Image(systemName: "ellipsis")
                     }
                 }
                 ToolbarSpacer(placement: .bottomBar)
@@ -112,3 +154,4 @@ struct HabitListView: View {
         }
     }
 }
+
