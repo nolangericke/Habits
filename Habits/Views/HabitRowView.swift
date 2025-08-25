@@ -12,7 +12,9 @@ import UIKit
 struct HabitRowView: View {
     let habit: Habit
     let onTap: (() -> Void)?
+    let onDelete: (() -> Void)?
     @EnvironmentObject var viewModel: HabitViewModel
+    @State private var showingEditSheet = false
 
     private let haptic = UINotificationFeedbackGenerator()
     private let softHaptic = UIImpactFeedbackGenerator(style: .soft)
@@ -26,9 +28,10 @@ struct HabitRowView: View {
         viewModel.isHabitCompletedToday(habit) ? 1.0 : 0.0
     }
 
-    init(habit: Habit, onTap: (() -> Void)? = nil) {
+    init(habit: Habit, onTap: (() -> Void)? = nil, onDelete: (() -> Void)? = nil) {
         self.habit = habit
         self.onTap = onTap
+        self.onDelete = onDelete
     }
     
     var body: some View {
@@ -93,6 +96,22 @@ struct HabitRowView: View {
             }
             .buttonStyle(.plain)
         }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                onDelete?()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .tint(.red)
+            Button {
+                showingEditSheet = true
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.orange)
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            UpdateHabitView(habit: habit).environmentObject(viewModel)
+        }
     }
 }
-

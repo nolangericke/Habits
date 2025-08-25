@@ -14,12 +14,17 @@ struct HabitListView: View {
     @EnvironmentObject var viewModel: HabitViewModel
     
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \Habit.orderIndex, ascending: true), NSSortDescriptor(keyPath: \Habit.name, ascending: true)],
         animation: .default)
     private var habits: FetchedResults<Habit>
     
+    private var habitsByRoutine: [Routine?: [Habit]] {
+        Dictionary(grouping: habits) { $0.routine }
+    }
+    
     @State private var showingAddHabit = false
     @State private var showingAddRoutine = false
+    @State private var showingReorderRoutines = false
     @State private var selectedHabit: Habit?
     
     private func deleteHabit(at offsets: IndexSet) {
@@ -29,23 +34,56 @@ struct HabitListView: View {
         }
     }
     
+    private func moveHabits(indices: IndexSet, newOffset: Int, habits: [Habit]) {
+        var revisedHabits = habits
+        revisedHabits.move(fromOffsets: indices, toOffset: newOffset)
+        for (index, habit) in revisedHabits.enumerated() {
+            habit.orderIndex = Int64(index)
+        }
+        try? context.save()
+    }
+    
     var body: some View {
         NavigationStack {
             List {
-                ForEach(habits, id: \.self) { habit in
-                    HabitRowView(habit: habit, onTap: {
-                        selectedHabit = habit
-                    })
-                    .environmentObject(viewModel)
+                ForEach(habitsByRoutine.sorted(by: { (lhs, rhs) in
+                    switch (lhs.key, rhs.key) {
+                    case (nil, _): return true
+                    case (_, nil): return false
+                    case let (l?, r?): return l.orderIndex < r.orderIndex
+                    }
+                }), id: \.key) { routine, habits in
+                    Section(header: Text(routine?.name ?? "No Routine")) {
+                        ForEach(habits, id: \.self) { habit in
+                            HabitRowView(habit: habit, onTap: {
+                                selectedHabit = habit
+                            }, onDelete: {
+                                viewModel.deleteHabit(habit)
+                            })
+                            .environmentObject(viewModel)
+                        }
+                        .onMove { indices, newOffset in
+                            moveHabits(indices: indices, newOffset: newOffset, habits: habits)
+                        }
+                    }
                 }
-                .onDelete(perform: deleteHabit)
             }
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    EditButton()
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         showingAddRoutine = true
                     } label: {
                         Image(systemName: "ellipsis")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingReorderRoutines = true
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down")
                     }
                 }
                 ToolbarSpacer(placement: .bottomBar)
@@ -62,6 +100,10 @@ struct HabitListView: View {
             }
             .sheet(isPresented: $showingAddRoutine) {
                 AddRoutineView()
+            }
+            .sheet(isPresented: $showingReorderRoutines) {
+                RoutineReorderView()
+                    .environmentObject(viewModel)
             }
             .navigationDestination(item: $selectedHabit) { habit in
                 HabitDetailView(habit: habit)
