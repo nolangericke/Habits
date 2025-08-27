@@ -30,11 +30,24 @@ struct AddHabitView: View {
     @State private var selectedArea: Area?
     @State private var selectedRoutine: Routine?
     @State private var showAlert = false
+    @State private var selectedType: HabitType = .generic
+    @State private var targetValueString: String = ""
     
     var body: some View {
         NavigationStack {
             Form {
                 TextField("Habit Name", text: $habitName)
+                
+                Picker("Type", selection: $selectedType) {
+                    Text("Generic").tag(HabitType.generic)
+                    Text("Calorie").tag(HabitType.calorie)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                
+                if selectedType == .calorie {
+                    TextField("Target Calories", text: $targetValueString)
+                        .keyboardType(.numberPad)
+                }
                 
                 Picker("Area", selection: $selectedArea) {
                     ForEach(areas, id: \.self) { area in
@@ -63,15 +76,17 @@ struct AddHabitView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         if let area = selectedArea {
-                            viewModel.addHabit(name: habitName, area: area, routine: selectedRoutine)
+                            let targetVal = selectedType == .calorie ? Double(targetValueString) : nil
+                            viewModel.addHabit(name: habitName, area: area, routine: selectedRoutine, type: selectedType, targetValue: targetVal)
                             dismiss()
                         }
                     } label: {
                         Image(systemName: "checkmark")
                     }
-                    .disabled(areas.isEmpty || habitName.isEmpty)
+                    .disabled(areas.isEmpty || habitName.isEmpty || (selectedType == .calorie && Double(targetValueString) == nil))
                 }
             }
         }
     }
 }
+

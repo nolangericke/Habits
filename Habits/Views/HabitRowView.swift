@@ -15,6 +15,7 @@ struct HabitRowView: View {
     let onDelete: (() -> Void)?
     @EnvironmentObject var viewModel: HabitViewModel
     @State private var showingEditSheet = false
+    @State private var currentProgress: CGFloat = 0.0
 
     private let haptic = UINotificationFeedbackGenerator()
     private let softHaptic = UIImpactFeedbackGenerator(style: .soft)
@@ -25,7 +26,10 @@ struct HabitRowView: View {
     }
     
     private var progress: CGFloat {
-        viewModel.isHabitCompletedToday(habit) ? 1.0 : 0.0
+        if habit.habitTypeEnum == .calorie, let target = viewModel.currentTarget(for: habit)?.value, target > 0 {
+            return min(currentProgress / CGFloat(target), 1.0)
+        }
+        return viewModel.isHabitCompletedToday(habit) ? 1.0 : 0.0
     }
     
     private var yesterday: Date {
@@ -126,5 +130,16 @@ struct HabitRowView: View {
         .sheet(isPresented: $showingEditSheet) {
             UpdateHabitView(habit: habit).environmentObject(viewModel)
         }
+        .onAppear {
+            if habit.habitTypeEnum == .calorie, let target = viewModel.currentTarget(for: habit) {
+                let startOfDay = Calendar.current.startOfDay(for: Date())
+                HealthKitService.shared.fetchCaloriesConsumed(start: startOfDay) { value, _ in
+                    if let value = value {
+                        currentProgress = CGFloat(value)
+                    }
+                }
+            }
+        }
     }
 }
+

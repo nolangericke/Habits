@@ -5,7 +5,13 @@ import CoreData
 struct HabitApp: App {
     
     init() {
-        print("HabitApp is starting up!")
+        HealthKitService.shared.requestAuthorization { success, error in
+            if success {
+                print("HealthKit authorization granted.")
+            } else {
+                print("HealthKit authorization denied or failed: \(error?.localizedDescription ?? "Unknown error")")
+            }
+        }
     }
     
     let persistenceController = PersistenceController.shared

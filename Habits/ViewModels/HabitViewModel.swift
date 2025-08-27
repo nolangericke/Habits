@@ -10,6 +10,19 @@ import Combine
 import SwiftUI
 import CoreData
 
+extension Habit {
+    var habitTypeEnum: HabitType {
+        get { HabitType(rawValue: self.type ?? "generic") ?? .generic }
+        set { self.type = newValue.rawValue }
+    }
+}
+
+enum HabitType: String {
+    case generic
+    case calorie
+    // Add more as needed, e.g. time, steps
+}
+
 class HabitViewModel: ObservableObject {
     @Published var habits: [Habit] = []
     @Published var completions: [HabitCompletion] = []
@@ -35,15 +48,20 @@ class HabitViewModel: ObservableObject {
             print("Error fetching habits: \(error)")
         }
     }
-    func addHabit(name: String, area: Area, routine: Routine?) {
+    func addHabit(name: String, area: Area, routine: Routine?, type: HabitType = .generic, targetValue: Double? = nil) {
         let habit = Habit(context: context)
         habit.name = name
         habit.id = UUID()
         habit.createdAt = Date()
         habit.area = area
         habit.routine = routine // routine is optional
+        habit.type = type.rawValue
         save()
-        fetchHabits()
+        if type == .calorie, let val = targetValue {
+            addHabitTarget(to: habit, value: val)
+        } else {
+            fetchHabits()
+        }
     }
     func updateHabit(_ habit: Habit, name: String) {
         habit.name = name
@@ -54,6 +72,21 @@ class HabitViewModel: ObservableObject {
         context.delete(habit)
         save()
         fetchHabits()
+    }
+    
+    func updateHabitType(_ habit: Habit, to newType: HabitType) {
+        habit.habitTypeEnum = newType
+        save()
+        fetchHabits()
+    }
+    
+    func setCurrentHabitTarget(for habit: Habit, value: Double, startDate: Date = Date()) {
+        // End any current target
+        if let current = currentTarget(for: habit) {
+            current.endDate = startDate
+        }
+        // Add new target
+        addHabitTarget(to: habit, value: value, startDate: startDate)
     }
     
     // MARK: - HabitCompletion CRUD
@@ -177,6 +210,38 @@ class HabitViewModel: ObservableObject {
         }
     }
     
+    // MARK: - HabitTarget CRUD
+    func addHabitTarget(to habit: Habit, value: Double, startDate: Date = Date(), endDate: Date? = nil) {
+        let target = HabitTarget(context: context)
+        target.value = value
+        target.startDate = startDate
+        target.endDate = endDate
+        target.habit = habit
+        save()
+        fetchHabits()
+    }
+    
+    func updateHabitTarget(_ target: HabitTarget, value: Double, endDate: Date? = nil) {
+        target.value = value
+        if let end = endDate {
+            target.endDate = end
+        }
+        save()
+        fetchHabits()
+    }
+    
+    func deleteHabitTarget(_ target: HabitTarget) {
+        context.delete(target)
+        save()
+        fetchHabits()
+    }
+    
+    func currentTarget(for habit: Habit) -> HabitTarget? {
+        let now = Date()
+        let targets = (habit.habitTarget as? Set<HabitTarget>) ?? []
+        return targets.first(where: { $0.endDate == nil || ($0.endDate ?? now) > now })
+    }
+    
     // MARK: - Save Helper
     private func save() {
         do {
@@ -187,3 +252,4 @@ class HabitViewModel: ObservableObject {
         }
     }
 }
+
